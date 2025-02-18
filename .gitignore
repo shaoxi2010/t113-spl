@@ -1,0 +1,9 @@
+.depend
+*.map
+*.bin
+*.o
+*.elf
+.moduile.common.mk
+include/commit_info.h
+fes/fes1.lds
+nboot/boot0.lds
