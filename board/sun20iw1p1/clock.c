@@ -12,22 +12,49 @@
 #include <arch/uart.h>
 #include <arch/efuse.h>
 
-
-static void set_pll_cpux_axi(void)
+#define NOUSE __attribute__((unused))
+NOUSE static void set_arm_src_to_pll(void)
 {
 	u32 reg_val;
-	void __iomem *cpux_base = sunxi_get_iobase(CCMU_CPUX_AXI_CFG_REG);
-	void __iomem *pll_base = sunxi_get_iobase(CCMU_PLL_CPUX_CTRL_REG);
+	void __iomem *cpux_base = sunxi_get_iobase(CCMU_ARM_AXI_CFG_REG);
+	reg_val = readl(cpux_base);
+	reg_val &= ~(0x07 << 24 | 0x3 << 8 | 0xf << 0);
+	reg_val |= (0x03 << 24 | 0x1 << 8);
+	writel(reg_val, cpux_base);
+	udelay(1);
+}
 
+NOUSE static void set_riscv_src_to_pll(void)
+{
+	u32 reg_val;
+	void __iomem *cpux_base = sunxi_get_iobase(CCMU_RISCV_AXI_CFG_REG);
+	reg_val = readl(cpux_base);
+	reg_val &= ~(0x07 << 24 | 0x3 << 8 | 0xf << 0);
+	reg_val |= (0x05 << 24 | 0x1 << 8);
+	writel(reg_val, cpux_base);
+	udelay(1);
+}
+
+static void set_cpu_src_to_osc(void)
+{
+#if defined (CFG_ARCH_RISCV)
+	void __iomem *cpux_base = sunxi_get_iobase(CCMU_RISCV_AXI_CFG_REG);
+#else
+	void __iomem *cpux_base = sunxi_get_iobase(CCMU_ARM_AXI_CFG_REG);
+#endif
 	/* select CPUX  clock src: OSC24M,AXI divide ratio is 3, system apb clk ratio is 4 */
 	writel((0 << 24) | (3 << 8) | (1 << 0), cpux_base);
 	udelay(1);
+}
 
+static void set_pll_cpu(void)
+{
+	u32 reg_val;
+	void __iomem *pll_base = sunxi_get_iobase(CCMU_PLL_CPUX_CTRL_REG);
 	/* disable pll gating*/
 	reg_val = readl(pll_base);
 	reg_val &= ~(1 << 27);
 	writel(reg_val, pll_base);
-
 	reg_val = readl(pll_base);
 	reg_val |= (0x1U << 30);
 	writel(reg_val, pll_base);
@@ -65,12 +92,6 @@ static void set_pll_cpux_axi(void)
 	reg_val &= ~(1 << 29);
 	writel(reg_val, pll_base);
 
-	udelay(1);
-	/*set and change cpu clk src to PLL_CPUX,  PLL_CPUX:AXI0 = 1008M:504M*/
-	reg_val = readl(cpux_base);
-	reg_val &= ~(0x07 << 24 | 0x3 << 8 | 0xf << 0);
-	reg_val |= (0x05 << 24 | 0x1 << 8);
-	writel(reg_val, cpux_base);
 	udelay(1);
 }
 
@@ -153,6 +174,9 @@ static void set_pll_mbus(void)
 	reg_val |= (0x1 << 30);
 	writel(reg_val, mbus_base);
 	udelay(1);
+	void __iomem *mbus = sunxi_get_iobase(CCMU_MBUS_MST_CLK_GATING_REG);
+	reg_val = readl(mbus);
+	reg_val |= 0x1 << 11; // enable riscv mbus clock
 }
 
 static void set_ldo_analog(void)
@@ -240,8 +264,18 @@ void sunxi_board_pll_init(void)
 {
 	printf("set pll start\n");
 	set_platform_config();
-	set_pll_cpux_axi();
+	set_cpu_src_to_osc();
+	printf("set pll cpu\n");
+	set_pll_cpu();
+	printf("set pll periph0\n");
+#if defined(CFG_ARCH_RISCV)
+	set_riscv_src_to_pll();
+#else
+	set_arm_src_to_pll();
+#endif
+	printf("set pll video\n");
 	set_pll_periph0();
+	printf("set pll video1\n");
 	set_ahb();
 	set_apb();
 	set_pll_dma();
@@ -256,7 +290,11 @@ void sunxi_board_clock_reset(void)
 	u32 reg_val;
 	void __iomem *ahb_base = sunxi_get_iobase(CCMU_PSI_AHB1_AHB2_CFG_REG);
 	void __iomem *apb_base = sunxi_get_iobase(CCMU_APB1_CFG_GREG);
-	void __iomem *cpu_base = sunxi_get_iobase(CCMU_CPUX_AXI_CFG_REG);
+#if defined(CFG_ARCH_RISCV)
+	void __iomem *cpu_base = sunxi_get_iobase(CCMU_RISCV_AXI_CFG_REG);
+#else
+	void __iomem *cpu_base = sunxi_get_iobase(CCMU_ARM_AXI_CFG_REG);
+#endif
 
 	/*set ahb,apb to default, use OSC24M*/
 	reg_val = readl(ahb_base);

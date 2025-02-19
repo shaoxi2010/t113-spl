@@ -9,10 +9,10 @@
 include $(TOPDIR)/mk/config.mk
 
 all:
-ifeq ($(notdir $(shell find ./ -name lib-dram)), lib-dram)
-	make -C lib-dram
+ifeq ($(CFG_ARCH_RISCV), y)
+	ln -sf libdram-riscv libdram
 else
-	@echo "libdram exist"
+	ln -sf libdram-arm libdram
 endif
 
 

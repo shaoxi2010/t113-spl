@@ -41,11 +41,12 @@
 #define CCMU_PLL_AUDIO0_PAT0_REG	(SUNXI_CCM_BASE + 0x178)
 
 /* cfg list */
-#if defined(CFG_ARCH_RISCV)
-#define CCMU_CPUX_AXI_CFG_REG              (SUNXI_CCM_BASE + 0xD00) 
-#else
-#define CCMU_CPUX_AXI_CFG_REG              (SUNXI_CCM_BASE + 0x500)
-#endif
+#define CCMU_ARM_AXI_CFG_REG               (SUNXI_CCM_BASE + 0x500) 
+#define CCMU_ARM_GATING_REG                (SUNXI_CCM_BASE + 0x504)
+#define CCMU_ARM_CFG_BGR_REG			   (SUNXI_CCM_BASE + 0x50C) //not sure
+#define CCMU_RISCV_AXI_CFG_REG             (SUNXI_CCM_BASE + 0xD00)
+#define CCMU_RISCV_GATING_REG              (SUNXI_CCM_BASE + 0xD04)
+#define CCMU_RISCV_CFG_BGR_REG			   (SUNXI_CCM_BASE + 0xD0C)
 #define CCMU_PSI_AHB1_AHB2_CFG_REG         (SUNXI_CCM_BASE + 0x510)
 #define CCMU_APB1_CFG_GREG                 (SUNXI_CCM_BASE + 0x520)
 #define CCMU_APB2_CFG_GREG                 (SUNXI_CCM_BASE + 0x524)
