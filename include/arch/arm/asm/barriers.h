@@ -34,6 +34,11 @@
 #define isb()	ISB
 #define dsb()	DSB
 #define dmb()	DMB
-#define wmb()	DSB
+
+/* from kernel */
+#define mb() dsb()
+#define rmb() dsb()
+#define wmb() dsb(st)
+
 #endif	/* __ASSEMBLY__ */
 #endif	/* __BARRIERS_H__ */
